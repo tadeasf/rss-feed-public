@@ -25,12 +25,17 @@ interface SearchFiltersDialogProps {
   filters: SearchFilters
   onFiltersChange: (filters: SearchFilters) => void
   trigger: React.ReactNode
+  categories: string[]
 }
 
-const CATEGORIES = ['All', 'Movies', 'TV', 'Games', 'Music', 'Applications', 'Anime', 'Books']
 const LIMITS = [5, 10, 20, 50]
 
-export function SearchFiltersDialog({ filters, onFiltersChange, trigger }: SearchFiltersDialogProps) {
+export function SearchFiltersDialog({ 
+  filters, 
+  onFiltersChange, 
+  trigger,
+  categories 
+}: SearchFiltersDialogProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -51,7 +56,7 @@ export function SearchFiltersDialog({ filters, onFiltersChange, trigger }: Searc
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map((category) => (
+                {categories.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category}
                   </SelectItem>

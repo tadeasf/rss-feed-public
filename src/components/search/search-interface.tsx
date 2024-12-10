@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { SearchFiltersDialog } from "./search-filters-dialog"
@@ -8,6 +8,7 @@ import { Search, SlidersHorizontal, Loader2 } from "lucide-react"
 import { SearchResultsTable } from "./search-results-table"
 import { useToast } from "@/hooks/use-toast"
 import type { TorrentResult } from "@/types/torrent"
+import { getAllUniqueCategories } from '@/lib/providers-service'
 
 interface SearchFilters {
   category: string
@@ -19,11 +20,28 @@ export function SearchInterface() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState<TorrentResult[]>([])
+  const [categories, setCategories] = useState<string[]>(['All'])
   const [selectedResults, setSelectedResults] = useState<Set<string>>(new Set())
   const [filters, setFilters] = useState<SearchFilters>({
     category: 'All',
     limit: 20
   })
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/providers')
+        if (!response.ok) throw new Error('Failed to fetch providers')
+        const providers = await response.json()
+        const uniqueCategories = getAllUniqueCategories(providers)
+        setCategories(uniqueCategories)
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+      }
+    }
+
+    fetchCategories()
+  }, [])
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return
@@ -75,6 +93,7 @@ export function SearchInterface() {
         <SearchFiltersDialog
           filters={filters}
           onFiltersChange={setFilters}
+          categories={categories}
           trigger={
             <Button variant="outline" size="icon">
               <SlidersHorizontal className="h-4 w-4" />
