@@ -1,82 +1,130 @@
 'use client'
 
-import { useSession, signOut } from "next-auth/react"
-import { redirect } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { useState } from "react"
+import { useToast } from "@/hooks/use-toast"
+import { Toaster } from "@/components/ui/toaster"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import type { FeedItem } from "@/models/Feed"
-
-// Temporary mock data until we implement the database
-const mockFeedItems: FeedItem[] = [
-  {
-    _id: "1",
-    title: "First Post",
-    link: "https://example.com/1",
-    date: new Date(),
-  },
-]
+import { FeedTable } from "@/components/feed-table"
+import { AddFeedDialog } from "@/components/add-feed-dialog"
+import Loading from "@/components/loading"
+import { Button } from "@/components/ui/button"
+import { Loader2 } from "lucide-react"
 
 export default function Home() {
-  const { status } = useSession({
-    required: true,
-    onUnauthenticated() {
-      redirect('/login')
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+
+  const { data: feedItems, isLoading: feedsLoading } = useQuery<FeedItem[]>({
+    queryKey: ['feeds'],
+    queryFn: async () => {
+      const response = await fetch('/api/feed', {
+        credentials: 'include',
+      })
+      if (!response.ok) throw new Error('Network response was not ok')
+      const data = await response.json()
+      if (!Array.isArray(data)) throw new Error('Invalid response format')
+      return data
+    },
+    staleTime: 1000 * 60,
+    retry: 3,
+    refetchOnWindowFocus: false
+  })
+
+  const mutation = useMutation({
+    mutationFn: async (newFeed: { infoHash: string }) => {
+      const response = await fetch('/api/feed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(newFeed),
+      })
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to add feed')
+      }
+      return response.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['feeds'] })
+      toast({
+        title: "Success",
+        description: "Feed item added successfully",
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      })
     },
   })
-  const [feedItems] = useState<FeedItem[]>(mockFeedItems)
 
-  if (status === "loading") {
-    return <div>Loading...</div>
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/feed', {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete feeds')
+      }
+      return response.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['feeds'] })
+      toast({
+        title: "Success",
+        description: "All feeds deleted successfully",
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      })
+    },
+  })
+
+  const handleDeleteAll = () => {
+    if (window.confirm('Are you sure you want to delete all feeds? This action cannot be undone.')) {
+      deleteMutation.mutate()
+    }
   }
+
+  if (feedsLoading) return <Loading />
 
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold">Kocouřátčí feed</h1>
-        <Button variant="outline" onClick={() => signOut()}>
-          Sign out
+      </div>
+      
+      <div className="flex gap-4 mb-6">
+        <AddFeedDialog 
+          onSubmit={(infoHash) => mutation.mutate({ infoHash })}
+          isLoading={mutation.isPending}
+        />
+        <Button 
+          variant="destructive"
+          onClick={handleDeleteAll}
+          disabled={deleteMutation.isPending}
+        >
+          {deleteMutation.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Deleting...
+            </>
+          ) : (
+            "Delete All"
+          )}
         </Button>
       </div>
       
-      <Button className="mb-6">Add</Button>
-      
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Link</TableHead>
-            <TableHead>Date</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {feedItems.map((item) => (
-            <TableRow key={item._id}>
-              <TableCell>{item.title}</TableCell>
-              <TableCell>
-                <a 
-                  href={item.link}
-                  className="text-blue-500 hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {item.link}
-                </a>
-              </TableCell>
-              <TableCell>
-                {item.date.toLocaleDateString()}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {feedItems && <FeedTable items={feedItems} />}
+      <Toaster />
     </div>
   )
 }

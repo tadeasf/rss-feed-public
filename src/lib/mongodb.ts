@@ -1,18 +1,22 @@
 import mongoose from 'mongoose'
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rssfeed'
+declare global {
+  // eslint-disable-next-line no-var
+  var mongoose: {
+    conn: mongoose.Mongoose | null
+    promise: Promise<mongoose.Mongoose> | null
+  } | undefined
+}
+
+const MONGODB_URI = process.env.MONGODB_URI!
 
 if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable')
 }
 
-let cached = global.mongoose
+const cached = global.mongoose ?? (global.mongoose = { conn: null, promise: null })
 
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null }
-}
-
-async function connectDB() {
+async function connectDB(): Promise<mongoose.Mongoose> {
   if (cached.conn) {
     return cached.conn
   }
@@ -22,9 +26,7 @@ async function connectDB() {
       bufferCommands: false,
     }
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      return mongoose
-    })
+    cached.promise = mongoose.connect(MONGODB_URI, opts)
   }
 
   try {
