@@ -9,6 +9,7 @@ import { AddFeedDialog } from "@/components/add-feed-dialog"
 import Loading from "@/components/loading"
 import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
+import { ModeToggle } from "@/components/mode-toggle"
 
 export default function Home() {
   const { toast } = useToast()
@@ -100,6 +101,7 @@ export default function Home() {
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold">Kocouřátčí feed</h1>
+        <ModeToggle />
       </div>
       
       <div className="flex gap-4 mb-6">
