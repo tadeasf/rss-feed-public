@@ -7,28 +7,29 @@ const nextConfig: NextConfig = {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         '_http_common': false,
-        'dns': false,
-        'net': false,
-        'tls': false,
         'fs': false,
+        'net': false,
+        'sleep': false,
+        'dns': false,
+        'tls': false,
         'cloudflare-scraper': false,
       }
     }
 
-    // Exclude problematic dependencies from client bundle
-    if (!isServer) {
-      config.module = {
-        ...config.module,
-        exprContextCritical: false,
-        rules: [
-          ...config.module.rules,
-          {
-            test: /node_modules\/torrent-search-api/,
-            use: 'null-loader'
-          }
-        ]
-      }
-    }
+    // // Exclude problematic dependencies from client bundle
+    // if (!isServer) {
+    //   config.module = {
+    //     ...config.module,
+    //     exprContextCritical: false,
+    //     rules: [
+    //       ...config.module.rules,
+    //       {
+    //         test: /node_modules\/torrent-search-api/,
+    //         use: 'null-loader'
+    //       }
+    //     ]
+    //   }
+    // }
 
     return config
   }

@@ -1,9 +1,14 @@
 'use server'
 import type { TorrentResult } from '@/types/torrent'
-import type { Torrent as BaseTorrent, TorrentProvider } from 'torrent-search-api'
+import type { TorrentProvider } from 'torrent-search-api'
 
-// Extend the base Torrent type with the additional fields we know exist
-interface ExtendedTorrent extends BaseTorrent {
+interface ExtendedTorrent {
+  title: string
+  time: string
+  size: string
+  magnet: string
+  desc: string
+  provider: string
   seeds?: number
   peers?: number
   link?: string
@@ -14,47 +19,26 @@ interface ExtendedTorrent extends BaseTorrent {
   imdb?: string
 }
 
-function mapTorrentToResult(torrent: ExtendedTorrent): TorrentResult {
-  return {
-    ...torrent,
-    seeds: typeof torrent.seeds === 'number' ? torrent.seeds : 0,
-    peers: typeof torrent.peers === 'number' ? torrent.peers : 0,
-    // Ensure all required fields are present
-    title: torrent.title || '',
-    time: torrent.time || '',
-    size: torrent.size || '',
-    provider: torrent.provider || '',
-    // Optional fields
-    magnet: torrent.magnet,
-    desc: torrent.desc,
-    // Additional fields will be included from spread
+// Move the TorrentSearchApi initialization to a separate function
+async function initializeTorrentApi() {
+  if (typeof window !== 'undefined') {
+    throw new Error('This module can only be used on the server')
   }
-}
-
-function getAllUniqueCategories(providers: TorrentProvider[]): string[] {
-  if (!Array.isArray(providers)) {
-    console.warn('Invalid providers input:', providers)
-    return ['All']
+  
+  try {
+    const TorrentSearchApi = (await import('torrent-search-api')).default
+    TorrentSearchApi.enablePublicProviders()
+    return TorrentSearchApi
+  } catch (error) {
+    console.error('Failed to initialize torrent API:', error)
+    throw error
   }
-
-  const categoriesSet = new Set<string>(['All'])
-  providers.forEach(provider => {
-    if (Array.isArray(provider?.categories)) {
-      provider.categories.forEach(category => {
-        if (category && typeof category === 'string') {
-          categoriesSet.add(category)
-        }
-      })
-    }
-  })
-  return Array.from(categoriesSet).sort()
 }
 
 export async function getActiveProviders(): Promise<TorrentProvider[]> {
   try {
-    const TorrentSearchApi = (await import('torrent-search-api')).default
-    TorrentSearchApi.enablePublicProviders()
-    const providers = TorrentSearchApi.getActiveProviders()
+    const api = await initializeTorrentApi()
+    const providers = api.getActiveProviders()
     
     if (!Array.isArray(providers)) {
       console.error('Invalid providers response:', providers)
@@ -63,11 +47,7 @@ export async function getActiveProviders(): Promise<TorrentProvider[]> {
     
     return providers
   } catch (error) {
-    console.error('Provider error:', {
-      error,
-      stack: error instanceof Error ? error.stack : undefined,
-      message: error instanceof Error ? error.message : String(error)
-    })
+    console.error('Provider error:', error)
     return []
   }
 }
@@ -78,31 +58,37 @@ export async function searchTorrents(
   limit: number = 20
 ): Promise<TorrentResult[]> {
   try {
-    const TorrentSearchApi = (await import('torrent-search-api')).default
-    TorrentSearchApi.enablePublicProviders()
+    const api = await initializeTorrentApi()
     
-    const torrents = await TorrentSearchApi.search(
+    const results = await api.search(
       query,
       category,
       limit
-    ) as ExtendedTorrent[] // Cast to our extended type
+    ) as ExtendedTorrent[]
     
-    if (!Array.isArray(torrents)) {
-      console.error('Invalid search results:', torrents)
+    if (!Array.isArray(results)) {
+      console.error('Invalid search results:', results)
       return []
     }
     
-    return torrents
-      .map(mapTorrentToResult)
-      .sort((a, b) => b.seeds - a.seeds)
+    return results.map(result => ({
+      title: result.title || '',
+      time: result.time || '',
+      size: result.size || '',
+      provider: result.provider || '',
+      seeds: typeof result.seeds === 'number' ? result.seeds : 0,
+      peers: typeof result.peers === 'number' ? result.peers : 0,
+      magnet: result.magnet,
+      desc: result.desc,
+      link: result.link,
+      id: result.id,
+      numFiles: result.numFiles,
+      status: result.status,
+      category: result.category,
+      imdb: result.imdb
+    }))
   } catch (error) {
-    console.error('Search error:', {
-      error,
-      stack: error instanceof Error ? error.stack : undefined,
-      message: error instanceof Error ? error.message : String(error)
-    })
-    throw new Error(`Failed to search torrents: ${error instanceof Error ? error.message : String(error)}`)
+    console.error('Search error:', error)
+    throw error
   }
-}
-
-export { getAllUniqueCategories } 
+} 

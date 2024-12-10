@@ -8,7 +8,6 @@ import { Search, SlidersHorizontal, Loader2 } from "lucide-react"
 import { SearchResultsTable } from "./search-results-table"
 import { useToast } from "@/hooks/use-toast"
 import type { TorrentResult } from "@/types/torrent"
-import { getActiveProviders, getAllUniqueCategories } from '@/lib/search-service'
 
 interface SearchFilters {
   category: string
@@ -30,14 +29,10 @@ export function SearchInterface() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const providers = await getActiveProviders()
-        if (Array.isArray(providers) && providers.length > 0) {
-          const uniqueCategories = getAllUniqueCategories(providers)
-          setCategories(uniqueCategories)
-        } else {
-          console.warn('No providers found or invalid providers response')
-          setCategories(['All'])
-        }
+        const response = await fetch('/api/categories')
+        if (!response.ok) throw new Error('Failed to fetch categories')
+        const data = await response.json()
+        setCategories(Array.isArray(data) ? data : ['All'])
       } catch (error) {
         console.error('Failed to fetch categories:', error)
         setCategories(['All'])

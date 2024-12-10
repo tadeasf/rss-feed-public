@@ -6,10 +6,7 @@ export async function GET() {
     const providers = await getActiveProviders()
     return NextResponse.json(providers)
   } catch (error) {
-    console.error('Providers error:', error)
-    return NextResponse.json(
-      { error: 'Failed to get providers' },
-      { status: 500 }
-    )
+    console.error('Failed to get providers:', error)
+    return NextResponse.json({ error: 'Failed to get providers' }, { status: 500 })
   }
 } 
