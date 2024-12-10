@@ -14,9 +14,10 @@ services:
       - MONGODB_URI=${MONGODB_URI}
       - USERNAME=${USERNAME}
       - PASSWORD=${PASSWORD}
-
+      - TORRENT_SERVICE_URL=http://torrent-service:3001
     depends_on:
       - mongodb
+      - torrent-service
 
   mongodb:
     image: mongo:latest
@@ -26,6 +27,15 @@ services:
       - ./data/mongodb:/data/db
     environment:
       - MONGO_INITDB_DATABASE=rssfeed
+
+  torrent-service:
+    build:
+      context: .
+      dockerfile: services/torrent-service/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
 
 volumes:
   mongodb_data:
