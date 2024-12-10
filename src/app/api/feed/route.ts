@@ -146,15 +146,20 @@ async function addToFeed(magnetOrHash: string): Promise<any> {
       })
     }
 
-    // Parse the magnet URI to get the name/title
+    // Parse the magnet URI
     const parsed = parseTorrent(magnetUri)
-    if (!parsed || !parsed.name) {
-      throw new Error('Invalid magnet URI or missing name')
+    if (!parsed) {
+      throw new Error('Invalid magnet URI')
     }
+
+    // Generate a name if not available
+    const title = parsed.name || 
+      parsed.dn || // Display Name from magnet URI
+      `Torrent-${parsed.infoHash?.slice(0, 8)}` // Use first 8 chars of info hash
 
     // Create new feed item
     const feedItem = new Feed({
-      title: parsed.name,
+      title,
       link: magnetUri,
       date: new Date()
     })
