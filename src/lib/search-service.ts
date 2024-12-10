@@ -6,24 +6,28 @@ export async function searchTorrents(
   category: string = 'All',
   limit: number = 20
 ): Promise<TorrentResult[]> {
-  // Check if we're on the server side
-  if (typeof window !== 'undefined') {
-    throw new Error('This function can only be called from the server side')
-  }
-
   try {
     const TorrentSearchApi = (await import('torrent-search-api')).default
+    console.log('Initializing TorrentSearchApi...')
+    
     TorrentSearchApi.enablePublicProviders()
-
+    console.log('Public providers enabled')
+    
+    console.log(`Searching for "${query}" in category "${category}" with limit ${limit}`)
     const results = await TorrentSearchApi.search(
       query,
       category,
       limit
     ) as TorrentResult[]
-
+    
+    console.log(`Found ${results.length} results`)
     return results.sort((a, b) => (b.seeds || 0) - (a.seeds || 0))
   } catch (error) {
-    console.error('Torrent search error:', error)
-    throw new Error('Failed to search torrents')
+    console.error('Detailed torrent search error:', {
+      error,
+      stack: error instanceof Error ? error.stack : undefined,
+      message: error instanceof Error ? error.message : String(error)
+    })
+    throw new Error(`Failed to search torrents: ${error instanceof Error ? error.message : String(error)}`)
   }
 } 
