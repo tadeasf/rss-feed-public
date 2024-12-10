@@ -93,7 +93,10 @@ export function SearchInterface() {
     try {
       const selectedTorrents = results.filter(result => 
         selectedResults.has(result.title) && result.magnet
-      )
+      ).map(torrent => ({
+        magnet: torrent.magnet,
+        title: torrent.title
+      }))
 
       if (selectedTorrents.length === 0) {
         throw new Error("No valid magnet links found in selected torrents")
@@ -104,7 +107,7 @@ export function SearchInterface() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          magnets: selectedTorrents.map(t => t.magnet)
+          torrents: selectedTorrents
         }),
       })
 

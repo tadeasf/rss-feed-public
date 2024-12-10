@@ -7,6 +7,8 @@ import parseTorrent from 'parse-torrent'
 
 // Move trackers to a separate config file
 const defaultTrackers = [
+  'udp://tracker.opentrackr.org:1337/announce',
+  'udp://tracker.openbittorrent.com:6969/announce',
   'udp://wambo.club:1337/announce',
   'udp://tracker.dutchtracking.com:6969/announce',
   'udp://tc.animereactor.ru:8082/announce',
@@ -129,38 +131,30 @@ async function validateBasicAuth() {
   return user === process.env.USERNAME && pwd === process.env.PASSWORD
 }
  
-async function addToFeed(magnetOrHash: string): Promise<any> {
+async function addToFeed(magnetUri: string, title?: string): Promise<any> {
   await connectDB()
   
   try {
-    let magnetUri: string
+    let finalMagnetUri = magnetUri
     
-    // Check if input is already a magnet URI
-    if (magnetOrHash.startsWith('magnet:')) {
-      magnetUri = magnetOrHash
-    } else {
-      // Assume it's an info hash and convert to magnet URI
-      magnetUri = toMagnetURI({
-        infoHash: magnetOrHash,
+    // If it's not a magnet URI, assume it's an info hash and convert
+    if (!magnetUri.startsWith('magnet:')) {
+      finalMagnetUri = toMagnetURI({
+        infoHash: magnetUri,
         announce: defaultTrackers,
       })
     }
 
     // Parse the magnet URI
-    const parsed = parseTorrent(magnetUri)
+    const parsed = parseTorrent(finalMagnetUri)
     if (!parsed) {
       throw new Error('Invalid magnet URI')
     }
 
-    // Generate a name if not available
-    const title = parsed.name || 
-      parsed.dn || // Display Name from magnet URI
-      `Torrent-${parsed.infoHash?.slice(0, 8)}` // Use first 8 chars of info hash
-
-    // Create new feed item
+    // Create new feed item using provided title or fallback
     const feedItem = new Feed({
-      title,
-      link: magnetUri,
+      title: title || parsed.name || `Torrent-${parsed.infoHash?.slice(0, 8)}`,
+      link: finalMagnetUri,
       date: new Date()
     })
 
@@ -201,39 +195,39 @@ export async function GET() {
 interface FeedPostBody {
   infoHash?: string
   magnets?: string[]
+  torrents?: Array<{
+    magnet: string
+    title: string
+  }>
 }
 
 export async function POST(request: Request) {
   if (!await validateBasicAuth()) {
     return NextResponse.json(
       { error: 'Unauthorized' },
-      {
-        status: 401,
-        headers: {
-          'WWW-Authenticate': 'Basic realm="Secure Area"',
-        }
-      }
+      { status: 401, headers: { 'WWW-Authenticate': 'Basic realm="Secure Area"' } }
     )
   }
 
   try {
     const body = await request.json() as FeedPostBody
-    let magnetsToProcess: string[] = []
-    
-    // Handle both magnets array and single infoHash
-    if (Array.isArray(body.magnets)) {
-      magnetsToProcess = body.magnets.filter(m => m)
-    } else if (body.infoHash) {
-      magnetsToProcess = [body.infoHash]
+
+    // Handle torrents from search interface
+    if (body.torrents?.length) {
+      const results = await Promise.all(
+        body.torrents.map(t => addToFeed(t.magnet, t.title))
+      )
+      return NextResponse.json({ success: true, count: results.length })
     }
-    
-    if (magnetsToProcess.length === 0) {
+
+    // Handle legacy magnet/infoHash inputs
+    const magnets = body.magnets || (body.infoHash ? [body.infoHash] : [])
+    if (!magnets.length) {
       throw new Error('No valid magnet links or info hashes provided')
     }
 
-    // Process each magnet/infoHash
     const results = await Promise.all(
-      magnetsToProcess.map(magnet => addToFeed(magnet))
+      magnets.map(magnet => addToFeed(magnet))
     )
     
     return NextResponse.json({ success: true, count: results.length })
