@@ -1,3 +1,4 @@
+'use server'
 import type { TorrentProvider } from 'torrent-search-api'
 
 export async function getActiveProviders(): Promise<TorrentProvider[]> {
@@ -11,18 +12,5 @@ export async function getActiveProviders(): Promise<TorrentProvider[]> {
   }
 }
 
-export function getAllUniqueCategories(providers: TorrentProvider[]): string[] {
-  const categoriesSet = new Set<string>(['All'])
-  
-  providers.forEach(provider => {
-    if (Array.isArray(provider.categories)) {
-      provider.categories.forEach(category => {
-        if (category && typeof category === 'string') {
-          categoriesSet.add(category)
-        }
-      })
-    }
-  })
-
-  return Array.from(categoriesSet).sort()
-} 
+// Move this to a separate utility file since it doesn't need to be a server action
+export { getAllUniqueCategories } from '@/utils/category-utils' 
