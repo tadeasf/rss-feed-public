@@ -7,9 +7,14 @@ export async function POST(request: Request) {
     console.log('Search request received:', { query, category, limit })
     
     const results = await searchTorrents(query, category, limit)
-    console.log(`Returning ${results.length} results`)
     
-    return NextResponse.json(results)
+    // Filter out results without magnet links
+    const validResults = results.filter(result => result.magnet)
+    
+    console.log(`Found ${results.length} results, ${validResults.length} with valid magnets`)
+    console.log('First two valid results:', validResults.slice(0, 2))
+    
+    return NextResponse.json(validResults)
   } catch (error) {
     console.error('Detailed API error:', {
       error,

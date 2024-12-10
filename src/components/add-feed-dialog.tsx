@@ -14,18 +14,20 @@ const DialogTitle = dynamic(() => import("@/components/ui/dialog").then(mod => m
 const DialogTrigger = dynamic(() => import("@/components/ui/dialog").then(mod => mod.DialogTrigger))
 
 interface AddFeedDialogProps {
-  onSubmit: (infoHash: string) => void
+  onSubmit: (infoHash: string, title?: string) => void
   isLoading: boolean
 }
 
 export function AddFeedDialog({ onSubmit, isLoading }: AddFeedDialogProps) {
   const [open, setOpen] = useState(false)
   const [infoHash, setInfoHash] = useState('')
+  const [title, setTitle] = useState('')
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    onSubmit(infoHash)
+    onSubmit(infoHash, title)
     setInfoHash('')
+    setTitle('')
     setOpen(false)
   }
 
@@ -39,6 +41,15 @@ export function AddFeedDialog({ onSubmit, isLoading }: AddFeedDialogProps) {
           <DialogTitle>Add New Feed Item</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title (Optional)</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter torrent title"
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="infoHash">Info Hash</Label>
             <Input

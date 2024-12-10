@@ -91,15 +91,18 @@ export function SearchInterface() {
 
     setIsDownloading(true)
     try {
-      const selectedTorrents = results.filter(result => 
-        selectedResults.has(result.title) && result.magnet
-      ).map(torrent => ({
-        magnet: torrent.magnet,
-        title: torrent.title
-      }))
+      const selectedTorrents = results
+        .filter(result => 
+          selectedResults.has(result.title) && 
+          result.magnet
+        )
+        .map(torrent => ({
+          magnet: torrent.magnet!,
+          title: torrent.title
+        }))
 
       if (selectedTorrents.length === 0) {
-        throw new Error("No valid magnet links found in selected torrents")
+        throw new Error("Selected torrents don't have valid magnet links")
       }
 
       const response = await fetch('/api/feed', {
