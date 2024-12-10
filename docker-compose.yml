@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "26017:3000"
+      - "24212:3000"
     volumes:
       - .:/app
       - /app/node_modules
@@ -21,7 +21,7 @@ services:
   mongodb:
     image: mongo:latest
     ports:
-      - "26018:27017"
+      - "24213:27017"
     volumes:
       - ./data/mongodb:/data/db
     environment:
