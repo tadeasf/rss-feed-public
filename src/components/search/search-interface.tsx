@@ -31,10 +31,16 @@ export function SearchInterface() {
     const fetchCategories = async () => {
       try {
         const providers = await getActiveProviders()
-        const uniqueCategories = getAllUniqueCategories(providers)
-        setCategories(uniqueCategories)
+        if (Array.isArray(providers) && providers.length > 0) {
+          const uniqueCategories = getAllUniqueCategories(providers)
+          setCategories(uniqueCategories)
+        } else {
+          console.warn('No providers found or invalid providers response')
+          setCategories(['All'])
+        }
       } catch (error) {
         console.error('Failed to fetch categories:', error)
+        setCategories(['All'])
       }
     }
 

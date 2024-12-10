@@ -55,9 +55,9 @@ export function SearchResultsTable({
               />
             </TableCell>
             <TableCell className="font-medium">
-              {result.desc ? (
+              {(result.desc || result.magnet) ? (
                 <a 
-                  href={result.desc}
+                  href={result.desc || result.magnet}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:underline text-blue-500"
