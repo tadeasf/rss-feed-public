@@ -128,6 +128,44 @@ async function validateBasicAuth() {
 
   return user === process.env.USERNAME && pwd === process.env.PASSWORD
 }
+ 
+async function addToFeed(magnetOrHash: string): Promise<any> {
+  await connectDB()
+  
+  try {
+    let magnetUri: string
+    
+    // Check if input is already a magnet URI
+    if (magnetOrHash.startsWith('magnet:')) {
+      magnetUri = magnetOrHash
+    } else {
+      // Assume it's an info hash and convert to magnet URI
+      magnetUri = toMagnetURI({
+        infoHash: magnetOrHash,
+        announce: defaultTrackers,
+      })
+    }
+
+    // Parse the magnet URI to get the name/title
+    const parsed = parseTorrent(magnetUri)
+    if (!parsed || !parsed.name) {
+      throw new Error('Invalid magnet URI or missing name')
+    }
+
+    // Create new feed item
+    const feedItem = new Feed({
+      title: parsed.name,
+      link: magnetUri,
+      date: new Date()
+    })
+
+    await feedItem.save()
+    return feedItem
+  } catch (error) {
+    console.error('Error adding to feed:', error)
+    throw error
+  }
+}
 
 export async function GET() {
   if (!await validateBasicAuth()) {
@@ -155,7 +193,12 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+interface FeedPostBody {
+  infoHash?: string
+  magnets?: string[]
+}
+
+export async function POST(request: Request) {
   if (!await validateBasicAuth()) {
     return NextResponse.json(
       { error: 'Unauthorized' },
@@ -168,65 +211,31 @@ export async function POST(req: Request) {
     )
   }
 
-  let body;
-
   try {
-    if (!req.body) {
-      return NextResponse.json(
-        { error: 'Request body is empty' },
-        { status: 400 }
-      )
+    const body = await request.json() as FeedPostBody
+    let magnetsToProcess: string[] = []
+    
+    // Handle both magnets array and single infoHash
+    if (Array.isArray(body.magnets)) {
+      magnetsToProcess = body.magnets.filter(m => m)
+    } else if (body.infoHash) {
+      magnetsToProcess = [body.infoHash]
+    }
+    
+    if (magnetsToProcess.length === 0) {
+      throw new Error('No valid magnet links or info hashes provided')
     }
 
-    body = await req.json()
-  } catch (error) {
-    console.error('Error parsing JSON:', error)
-    return NextResponse.json(
-      { error: 'Invalid JSON in request body' },
-      { status: 400 }
+    // Process each magnet/infoHash
+    const results = await Promise.all(
+      magnetsToProcess.map(magnet => addToFeed(magnet))
     )
-  }
-
-  try {
-    const { infoHash } = body
-
-    if (!infoHash) {
-      return NextResponse.json(
-        { error: 'Info hash is required' },
-        { status: 400 }
-      )
-    }
-
-    if (!/^[a-fA-F0-9]{40}$/.test(infoHash)) {
-      return NextResponse.json(
-        { error: 'Invalid info hash format' },
-        { status: 400 }
-      )
-    }
-
-    // Generate magnet URI with trackers
-    const magnetUri = toMagnetURI({
-      infoHash: infoHash.toLowerCase(),
-      announce: defaultTrackers,
-      name: infoHash // temporary name
-    })
-
-    // Parse the magnet URI to get metadata
-    const parsed = parseTorrent(magnetUri)
-    const title = parsed.name || `Torrent-${infoHash.substring(0, 8)}`
-
-    await connectDB()
-    const feed = await Feed.create({
-      title,
-      link: magnetUri,
-      date: new Date()
-    })
-
-    return NextResponse.json(feed)
+    
+    return NextResponse.json({ success: true, count: results.length })
   } catch (error) {
-    console.error('Error creating feed:', error)
+    console.error('API error:', error)
     return NextResponse.json(
-      { error: 'Failed to create feed' },
+      { error: error instanceof Error ? error.message : 'Failed to add to feed' },
       { status: 500 }
     )
   }

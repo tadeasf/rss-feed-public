@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { SearchFiltersDialog } from "./search-filters-dialog"
-import { Search, SlidersHorizontal, Loader2 } from "lucide-react"
+import { Search, SlidersHorizontal, Loader2, Download } from "lucide-react"
 import { SearchResultsTable } from "./search-results-table"
 import { useToast } from "@/hooks/use-toast"
 import type { TorrentResult } from "@/types/torrent"
@@ -25,6 +25,7 @@ export function SearchInterface() {
     category: 'All',
     limit: 20
   })
+  const [isDownloading, setIsDownloading] = useState(false)
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -78,6 +79,59 @@ export function SearchInterface() {
     }
   }
 
+  const handleDownload = async () => {
+    if (selectedResults.size === 0) {
+      toast({
+        title: "No torrents selected",
+        description: "Please select at least one torrent to download",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsDownloading(true)
+    try {
+      const selectedTorrents = results.filter(result => 
+        selectedResults.has(result.title) && result.magnet
+      )
+
+      if (selectedTorrents.length === 0) {
+        throw new Error("No valid magnet links found in selected torrents")
+      }
+
+      const response = await fetch('/api/feed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          magnets: selectedTorrents.map(t => t.magnet)
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to add torrents')
+      }
+
+      toast({
+        title: "Success",
+        description: `Added ${selectedTorrents.length} torrent(s) to your feed`,
+      })
+      
+      // Clear selections after successful download
+      setSelectedResults(new Set())
+    } catch (error) {
+      console.error('Download failed:', error)
+      toast({
+        title: "Download Failed",
+        description: error instanceof Error ? error.message : "Failed to add torrents to feed",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex gap-4">
@@ -115,11 +169,32 @@ export function SearchInterface() {
       </div>
 
       {results.length > 0 && (
-        <SearchResultsTable 
-          results={results}
-          selectedResults={selectedResults}
-          onSelectionChange={setSelectedResults}
-        />
+        <>
+          <SearchResultsTable 
+            results={results}
+            selectedResults={selectedResults}
+            onSelectionChange={setSelectedResults}
+          />
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleDownload} 
+              disabled={isDownloading || selectedResults.size === 0}
+              className="w-[200px]"
+            >
+              {isDownloading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding to Feed...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Add to Feed ({selectedResults.size})
+                </>
+              )}
+            </Button>
+          </div>
+        </>
       )}
     </div>
   )
