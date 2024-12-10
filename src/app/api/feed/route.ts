@@ -224,7 +224,11 @@ export async function POST(request: Request) {
       inputs = body.torrents
     } else if (body.infoHash) {
       // Handle single info hash with optional title
-      inputs = [{ magnet: body.infoHash, title: body.title }]
+      const magnet = toMagnetURI({
+        infoHash: body.infoHash,
+        announce: defaultTrackers
+      })
+      inputs = [{ magnet, title: body.title }]
     } else if (body.magnets?.length) {
       // Handle array of magnet links
       inputs = body.magnets
