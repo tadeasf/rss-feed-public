@@ -8,8 +8,7 @@ import { Search, SlidersHorizontal, Loader2 } from "lucide-react"
 import { SearchResultsTable } from "./search-results-table"
 import { useToast } from "@/hooks/use-toast"
 import type { TorrentResult } from "@/types/torrent"
-import { getAllUniqueCategories } from '@/lib/providers-service'
-import { getActiveProviders } from '@/app/actions/providers'
+import { getActiveProviders, getAllUniqueCategories } from '@/lib/search-service'
 
 interface SearchFilters {
   category: string

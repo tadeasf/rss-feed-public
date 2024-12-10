@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getActiveProviders } from '@/lib/providers-service'
+import { getActiveProviders } from '@/lib/search-service'
 
 export async function GET() {
   try {
