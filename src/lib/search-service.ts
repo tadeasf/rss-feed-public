@@ -19,19 +19,33 @@ interface ExtendedTorrent {
   imdb?: string
 }
 
-// Move the TorrentSearchApi initialization to a separate function
+let torrentApi: any = null
+
 async function initializeTorrentApi() {
+  if (torrentApi) return torrentApi
+
   if (typeof window !== 'undefined') {
     throw new Error('This module can only be used on the server')
   }
   
-  try {
+  try {    
     const TorrentSearchApi = (await import('torrent-search-api')).default
-    TorrentSearchApi.enablePublicProviders()
-    return TorrentSearchApi
+    
+    // Configure specific providers that work well in Docker
+    const providers = ['ThePirateBay', '1337x', 'Rarbg']
+    providers.forEach(provider => {
+      try {
+        TorrentSearchApi.enableProvider(provider)
+      } catch (error) {
+        console.warn(`Failed to enable provider ${provider}:`, error)
+      }
+    })
+    
+    torrentApi = TorrentSearchApi
+    return torrentApi
   } catch (error) {
     console.error('Failed to initialize torrent API:', error)
-    throw error
+    throw new Error('Failed to initialize torrent search service')
   }
 }
 
@@ -60,9 +74,17 @@ export async function searchTorrents(
   try {
     const api = await initializeTorrentApi()
     
+    // Normalize category to work with most providers
+    const normalizedCategory = category === 'All' ? 'All' : 
+      category.toLowerCase().includes('movie') ? 'Movies' :
+      category.toLowerCase().includes('tv') ? 'TV' :
+      category.toLowerCase().includes('music') ? 'Music' :
+      category.toLowerCase().includes('game') ? 'Games' :
+      category.toLowerCase().includes('software') ? 'Apps' : 'All'
+    
     const results = await api.search(
       query,
-      category,
+      normalizedCategory,
       limit
     ) as ExtendedTorrent[]
     
@@ -78,9 +100,9 @@ export async function searchTorrents(
       provider: result.provider || '',
       seeds: typeof result.seeds === 'number' ? result.seeds : 0,
       peers: typeof result.peers === 'number' ? result.peers : 0,
-      magnet: result.magnet,
-      desc: result.desc,
-      link: result.link,
+      magnet: result.magnet || '',
+      desc: result.desc || '',
+      link: result.link || '',
       id: result.id,
       numFiles: result.numFiles,
       status: result.status,
