@@ -9,6 +9,7 @@ import { SearchResultsTable } from "./search-results-table"
 import { useToast } from "@/hooks/use-toast"
 import type { TorrentResult } from "@/types/torrent"
 import { getAllUniqueCategories } from '@/lib/providers-service'
+import { getActiveProviders } from '@/app/actions/providers'
 
 interface SearchFilters {
   category: string
@@ -30,9 +31,7 @@ export function SearchInterface() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/providers')
-        if (!response.ok) throw new Error('Failed to fetch providers')
-        const providers = await response.json()
+        const providers = await getActiveProviders()
         const uniqueCategories = getAllUniqueCategories(providers)
         setCategories(uniqueCategories)
       } catch (error) {

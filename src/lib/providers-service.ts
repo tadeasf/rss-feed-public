@@ -1,5 +1,7 @@
-'use server'
 import type { TorrentProvider } from 'torrent-search-api'
+import { getAllUniqueCategories } from '@/utils/category-utils'
+
+export { getAllUniqueCategories }
 
 export async function getActiveProviders(): Promise<TorrentProvider[]> {
   try {
@@ -10,7 +12,4 @@ export async function getActiveProviders(): Promise<TorrentProvider[]> {
     console.error('Failed to get providers:', error)
     return []
   }
-}
-
-// Move this to a separate utility file since it doesn't need to be a server action
-export { getAllUniqueCategories } from '@/utils/category-utils' 
+} 
