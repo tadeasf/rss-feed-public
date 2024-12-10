@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { SearchFiltersDialog } from "./search-filters-dialog"
 import { Search, SlidersHorizontal, Loader2 } from "lucide-react"
 import { SearchResultsTable } from "./search-results-table"
+import { useToast } from "@/hooks/use-toast"
 import type { TorrentResult } from "@/types/torrent"
 
 interface SearchFilters {
@@ -14,6 +15,7 @@ interface SearchFilters {
 }
 
 export function SearchInterface() {
+  const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState<TorrentResult[]>([])
@@ -42,9 +44,18 @@ export function SearchInterface() {
       if (!response.ok) throw new Error('Search failed')
       
       const data = await response.json()
+      if (data.error) {
+        throw new Error(data.error)
+      }
+      
       setResults(data)
     } catch (error) {
       console.error('Search failed:', error)
+      toast({
+        title: "Search Failed",
+        description: error instanceof Error ? error.message : "Failed to perform search",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
