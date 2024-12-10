@@ -36,6 +36,10 @@ services:
       - "3001:3001"
     environment:
       - NODE_ENV=production
+    volumes:
+      - ./src/types:/app/src/types
+      - ./services/torrent-service:/app/services/torrent-service
+      - /app/node_modules
 
 volumes:
   mongodb_data:

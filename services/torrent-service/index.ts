@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import TorrentSearchApi from 'torrent-search-api'
+import type { TorrentApiResult } from '../../src/types/torrent'
 
 const app = express()
 const port = process.env.TORRENT_SERVICE_PORT || 3001
@@ -47,7 +48,7 @@ app.post('/search', async (req: SearchRequest, res: Response) => {
       category.toLowerCase().includes('game') ? 'Games' :
       category.toLowerCase().includes('software') ? 'Apps' : 'All'
     
-    const results = await TorrentSearchApi.search(query, normalizedCategory, limit)
+    const results = await TorrentSearchApi.search(query, normalizedCategory, limit) as TorrentApiResult[]
     res.json(results)
   } catch (error) {
     console.error('Search error:', error)

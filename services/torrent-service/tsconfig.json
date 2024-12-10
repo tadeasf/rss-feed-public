@@ -11,12 +11,19 @@
     "strict": true,
     "downlevelIteration": true,
     "skipLibCheck": true,
-    "jsx": "preserve",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "allowJs": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../../src/*"]
+    },
     "types": [
       "bun-types"
     ]
-  }
+  },
+  "include": [
+    "*.ts",
+    "../../src/types/**/*.ts"
+  ]
 }
