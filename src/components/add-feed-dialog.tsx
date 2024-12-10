@@ -25,7 +25,14 @@ export function AddFeedDialog({ onSubmit, isLoading }: AddFeedDialogProps) {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    onSubmit(infoHash, title)
+    
+    // Clean up the info hash (remove magnet prefix if present)
+    const cleanHash = infoHash.toLowerCase()
+      .replace('magnet:?xt=urn:btih:', '')
+      .replace(/&.*$/, '') // Remove any tracker info if present
+      .trim()
+
+    onSubmit(cleanHash, title || undefined)
     setInfoHash('')
     setTitle('')
     setOpen(false)
@@ -51,13 +58,12 @@ export function AddFeedDialog({ onSubmit, isLoading }: AddFeedDialogProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="infoHash">Info Hash</Label>
+            <Label htmlFor="infoHash">Info Hash or Magnet Link</Label>
             <Input
               id="infoHash"
               value={infoHash}
               onChange={(e) => setInfoHash(e.target.value)}
-              placeholder="Enter 40-character info hash"
-              pattern="[a-fA-F0-9]{40}"
+              placeholder="Enter 40-character info hash or magnet link"
               required
             />
           </div>

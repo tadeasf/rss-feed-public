@@ -119,9 +119,13 @@ export function SearchInterface() {
         throw new Error(error.error || 'Failed to add torrents')
       }
 
+      const data = await response.json()
+      
       toast({
-        title: "Success",
-        description: `Added ${selectedTorrents.length} torrent(s) to your feed`,
+        title: "Torrents Added Successfully",
+        description: `Added ${data.count} torrent${data.count > 1 ? 's' : ''} to your feed. View them on the home page.`,
+        variant: "default",
+        duration: 5000, // Show for 5 seconds
       })
       
       // Clear selections after successful download
@@ -129,7 +133,7 @@ export function SearchInterface() {
     } catch (error) {
       console.error('Download failed:', error)
       toast({
-        title: "Download Failed",
+        title: "Failed to Add Torrents",
         description: error instanceof Error ? error.message : "Failed to add torrents to feed",
         variant: "destructive",
       })
