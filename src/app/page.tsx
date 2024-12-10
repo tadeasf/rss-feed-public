@@ -31,12 +31,15 @@ export default function Home() {
   })
 
   const mutation = useMutation({
-    mutationFn: async (newFeed: { infoHash: string }) => {
+    mutationFn: async (newFeed: { infoHash: string, title?: string }) => {
       const response = await fetch('/api/feed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(newFeed),
+        body: JSON.stringify({
+          infoHash: newFeed.infoHash,
+          title: newFeed.title || `Torrent-${newFeed.infoHash.substring(0, 6)}`
+        }),
       })
       if (!response.ok) {
         const error = await response.json()
@@ -100,7 +103,7 @@ export default function Home() {
     <div className="container mx-auto py-10">
       <div className="flex gap-4 mb-6">
         <AddFeedDialog 
-          onSubmit={(infoHash) => mutation.mutate({ infoHash })}
+          onSubmit={(infoHash, title) => mutation.mutate({ infoHash, title })}
           isLoading={mutation.isPending}
         />
         <Button 
