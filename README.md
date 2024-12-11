@@ -21,4 +21,9 @@ Together, these components create an independent, self-hosted streaming platform
 
 ## Quick Start
 
-The application can be run in either development or production mode using our initialization script:
+The application can be run in either development or production mode using our initialization script `run.sh`:
+
+```bash
+  chmod +x run.sh
+  ./run.sh --help
+```
