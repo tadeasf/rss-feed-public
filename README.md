@@ -7,8 +7,8 @@ A Next.js application for managing torrent RSS feeds, built with Bun and Docker.
 This application is part of a larger ecosystem:
 
 1. RSS Feed App (this repo) - Manages and monitors torrent RSS feeds
-2. [transmission-pia-compose](https://github.com/tadeasf/transmission-pia-compose) - Handles torrent downloading with VPN protection
-3. [plex-compose](https://github.com/tadeasf/plex-compose) - Provides media streaming capabilities
+2. [transmission-pia-compose](https://github.com/tadeasf/transmission-pia-compose-public) - Handles torrent downloading with VPN protection
+3. [plex-compose](https://github.com/tadeasf/plex-compose-public) - Provides media streaming capabilities
 
 Together, these components create an independent, self-hosted streaming platform.
 
