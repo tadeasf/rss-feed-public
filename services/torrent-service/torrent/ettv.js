@@ -10,7 +10,7 @@ async function ettvCentral(query, page = '0') {
         const ALLTORRENT = [];
         const ALLURLARRAY = [];
 
-        $('table tbody').each((index, element) => {
+        $('table tbody').each((_index, _element) => {
             $('tr').each((i, el) => {
                 const data = {
                     Name: $(el).find('td').eq(1).find('a b').text(),
@@ -30,7 +30,7 @@ async function ettvCentral(query, page = '0') {
             });
         });
 
-        await Promise.all(ALLURLARRAY.map(async (url) => {
+        await Promise.all(ALLURLARRAY.map(async url => {
             for (let i = 0; i < ALLTORRENT.length; i++) {
                 if (ALLTORRENT[i].Url === url) {
                     try {

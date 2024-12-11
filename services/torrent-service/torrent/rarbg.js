@@ -10,7 +10,7 @@ async function rarbg(query, page = '1') {
         const ALLTORRENT = [];
         const ALLURLARRAY = [];
 
-        $('table.lista2t tbody').each((index, element) => {
+        $('table.lista2t tbody').each((_index, _element) => {
             $('tr.lista2').each((i, el) => {
                 const td = $(el).children('td');
                 const data = {
