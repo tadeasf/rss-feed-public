@@ -1,68 +1,56 @@
-const cheerio = require('cheerio');
-const axios = require('axios');
-const dev = require('request-promise');
+import * as cheerio from 'cheerio';
+import axios from 'axios';
+import { axiosConfig, handleError } from './config.js';
 
 async function ettvCentral(query, page = '0') {
-    const ALLURLARRAY = [];
-    var ALLTORRENT = [];
-    const url = "https://www.ettvcentral.com/torrents-search.php?search= " + query + "&page=" + page;
-    let html;
     try {
-        html = await dev({
-            url: url,
-            // proxy: 'Enter your proxy uri here'
-        })
+        const url = "https://www.ettvcentral.com/torrents-search.php?search=" + query + "&page=" + page;
+        const html = await axios.get(url, axiosConfig);
+        const $ = cheerio.load(html.data);
+        const ALLTORRENT = [];
+        const ALLURLARRAY = [];
 
-    } catch {
-        return null;
+        $('table tbody').each((index, element) => {
+            $('tr').each((i, el) => {
+                const data = {
+                    Name: $(el).find('td').eq(1).find('a b').text(),
+                    Category: $(el).find('td').eq(0).find('a img').attr('title'),
+                    DateUploaded: $(el).find('td').eq(2).text(),
+                    Size: $(el).find('td').eq(3).text(),
+                    Seeders: $(el).find('td').eq(5).text(),
+                    Leechers: $(el).find('td').eq(6).text(),
+                    UploadedBy: $(el).find('td').eq(7).text(),
+                    Url: "https://www.ettvcentral.com" + $(el).find('td').eq(1).find('a').attr('href')
+                };
+                
+                if (data.Name !== '') {
+                    ALLURLARRAY.push(data.Url);
+                    ALLTORRENT.push(data);
+                }
+            });
+        });
+
+        await Promise.all(ALLURLARRAY.map(async (url) => {
+            for (let i = 0; i < ALLTORRENT.length; i++) {
+                if (ALLTORRENT[i].Url === url) {
+                    try {
+                        const html = await axios.get(url, axiosConfig);
+                        const $ = cheerio.load(html.data);
+                        
+                        ALLTORRENT[i].Poster = $('div .torrent_data').find('center img').attr('src') || '';
+                        ALLTORRENT[i].Magnet = $("#downloadbox > table > tbody > tr > td:nth-child(1) > a").attr('href');
+                    } catch {
+                        // Skip failed requests for individual torrents
+                        continue;
+                    }
+                }
+            }
+        }));
+
+        return ALLTORRENT;
+    } catch (error) {
+        return handleError(error, 'ettvCentral');
     }
-
-    const $ = cheerio.load(html);
-    $('table tbody').each((_, element) => {
-        $('tr').each((_, el) => {
-            const data = {};
-            const td = $(el).children('td');
-            data.Name = $(td).eq(1).find('a b').text();
-            data.Category = $(td).eq(0).find('a img').attr('title');
-            data.DateUploaded = $(td).eq(2).text();
-            data.Size = $(td).eq(3).text();
-            data.Seeders = $(td).eq(5).text();
-            data.Leechers = $(td).eq(6).text();
-            data.UploadedBy = $(td).eq(7).text();
-            data.Url = "https://www.ettvcentral.com" + $(td).eq(1).find('a').attr('href');
-            if (data.Name !== "") {
-                ALLURLARRAY.push(data.Url);
-                ALLTORRENT.push(data);
-            }
-        })
-    })
-    await Promise.all(ALLURLARRAY.map(async (url) => {
-        for (let i = 0; i < ALLTORRENT.length; i++) {
-            if (ALLTORRENT[i]['Url'] === url) {
-                let html;
-                try {
-                    html = await dev({
-                        url: url,
-                        // proxy: 'Enter your proxy uri here',
-                    })
-                } catch {
-                    return null;
-                }
-                let $ = cheerio.load(html);
-                let poster = '';
-                try {
-                    poster = $('div .torrent_data').find('center img').attr('src');
-                } catch {
-                    //
-                }
-                ALLTORRENT[i].Poster = poster;
-                ALLTORRENT[i].Magnet = $("#downloadbox > table > tbody > tr > td:nth-child(1) > a").attr('href');
-
-            }
-        }
-    }))
-
-    return ALLTORRENT;
 }
 
-module.exports = ettvCentral
+export default ettvCentral;

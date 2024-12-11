@@ -1,61 +1,54 @@
-const cheerio = require('cheerio')
-const axios = require('axios')
+import * as cheerio from 'cheerio';
+import axios from 'axios';
+import { axiosConfig, handleError } from './config.js';
 
-async function torrentFunk(query, page = '1') {
-    var ALLTORRENT = [];
-    var ALLURL = [];
-    const url = `https://www.torrentfunk.com/all/torrents/${query}.html`;
-    let html;
+async function torrentFunk(query) {
     try {
-        html = await axios.get(url, headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.106 Safari/537.36"
+        const url = `https://www.torrentfunk.com/all/torrents/${query}.html`;
+        const html = await axios.get(url, axiosConfig);
+        const $ = cheerio.load(html.data);
+        const ALLTORRENT = [];
+        const ALLURL = [];
+
+        $('.tmain tbody tr').each((i, element) => {
+            if (i > 4) {
+                const url = "https://www.torrentfunk.com" + $(element).find('td').eq(0).find('a').attr('href');
+                ALLURL.push(url);
+                const torrent = {
+                    'Name': $(element).find('td').eq(0).find('a').text().trim(),
+                    'Size': $(element).find('td').eq(2).text().trim(),
+                    'DateUploaded': $(element).find('td').eq(1).text().trim(),
+                    'Seeders': $(element).find('td').eq(3).text().trim(),
+                    'Leechers': $(element).find('td').eq(4).text().trim(),
+                    'Url': url
+                };
+                
+                if (torrent.Name !== '') {
+                    ALLTORRENT.push(torrent);
+                }
+            }
         });
 
-    } catch {
-        return null;
-    }
-
-    const $ = cheerio.load(html.data);
-
-    $('.tmain tbody tr').each((i, element) => {
-
-        if (i > 4) {
-            let url = "https://www.torrentfunk.com" + $(element).find('td').eq(0).find('a').attr('href');
-            ALLURL.push(url);
-            let torrent = {
-                'Name': $(element).find('td').eq(0).find('a').text().trim(),
-                'Size': $(element).find('td').eq(2).text(),
-                'DateUploaded': $(element).find('td').eq(1).text(),
-                'Uploader': $(element).find('td').eq(5).text(),
-                'Seeders': $(element).find('td').eq(3).text(),
-                'Leechers': $(element).find('td').eq(4).text(),
-                'Url': url
-            }
-            if (torrent.Name !== '') {
-                ALLTORRENT.push(torrent);
-            }
-        }
-    })
-
-    await Promise.all(ALLURL.map(async url => {
-        for (let i = 0; i < ALLTORRENT.length; i++) {
-            if (ALLTORRENT[i]['Url'] === url) {
-                let html;
-                try {
-                    html = await axios.get(url, headers = {
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.106 Safari/537.36"
-                    });
-                } catch {
-                    return;
+        await Promise.all(ALLURL.map(async url => {
+            for (let i = 0; i < ALLTORRENT.length; i++) {
+                if (ALLTORRENT[i].Url === url) {
+                    try {
+                        const html = await axios.get(url, axiosConfig);
+                        const $ = cheerio.load(html.data);
+                        ALLTORRENT[i].Torrent = "https://www.torrentfunk.com" + 
+                            $('#right > main > div.content > table:nth-child(3) > tbody > tr > td:nth-child(2) > a').attr('href');
+                    } catch {
+                        // Skip failed requests for individual torrents
+                        continue;
+                    }
                 }
-                const $ = cheerio.load(html.data);
-                ALLTORRENT[i].Torrent = "https://www.torrentfunk.com" + $('#right > main > div.content > table:nth-child(3) > tbody > tr > td:nth-child(2) > a').attr('href');
-
             }
-        }
+        }));
 
-    }))
-
-    return ALLTORRENT;
+        return ALLTORRENT;
+    } catch (error) {
+        return handleError(error, 'torrentFunk');
+    }
 }
-module.exports = torrentFunk;
+
+export default torrentFunk;

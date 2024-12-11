@@ -7,7 +7,6 @@ import {
   DEFAULT_MIN_SEEDERS, 
   DEFAULT_MIN_SIZE, 
   DEFAULT_LIMIT,
-  SearchApiFilters,
   BaseFilters
 } from '@/lib/constants'
 

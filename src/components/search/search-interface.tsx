@@ -12,10 +12,6 @@ import { TorrentCategory } from "@/types/torrent"
 import { 
   SearchFilters, 
   DEFAULT_SEARCH_FILTERS,
-  DEFAULT_MIN_SEEDERS,
-  DEFAULT_MIN_SIZE,
-  DEFAULT_LIMIT,
-  DEPTH_SLIDER_CONFIG
 } from '@/lib/constants'
 
 export function SearchInterface() {

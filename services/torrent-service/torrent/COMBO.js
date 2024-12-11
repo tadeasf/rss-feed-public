@@ -1,93 +1,45 @@
-const scrap1337x = require('./1337x');
-const scrapNyaa = require('./nyaaSI');
-const scrapYts = require('./yts');
-const scrapPirateBay = require('./pirateBay');
-const scrapTorLock = require('./torLock');
-const scrapEzTVio = require('./ezTV');
-const torrentGalaxy = require('./torrentGalaxy');
-const rarbg = require('./rarbg');
-const zooqle = require('./zooqle');
-const kickAss = require('./kickAss');
-const bitSearch = require('./bitSearch');
-const glodls = require('./gloTorrents');
-const magnet_dl = require('./magnet_dl');
-const limeTorrent = require('./limeTorrent');
-const torrentFunk = require('./torrentFunk');
-const torrentProject = require('./torrentProject');
-
+import { torrent1337x } from './1337x.js';
+import { nyaaSI } from './nyaaSI.js';
+import { yts } from './yts.js';
+import { pirateBay } from './pirateBay.js';
+import { torLock } from './torLock.js';
+import { ezTV } from './ezTV.js';
+import torrentGalaxy from './torrentGalaxy.js';
+import rarbg from './rarbg.js';
+import { zooqle } from './zooqle.js';
+import kickAss from './kickAss.js';
+import bitSearch from './bitSearch.js';
+import glodls from './gloTorrents.js';
+import magnet_dl from './magnet_dl.js';
+import limeTorrent from './limeTorrent.js';
+import torrentFunk from './torrentFunk.js';
+import torrentProject from './torrentProject.js';
 
 async function combo(query, page) {
-    let comboTorrent = []
-    await Promise.all([
-            torrentGalaxy(query, page),
-            scrapNyaa.nyaaSI(query, page),
-            scrapYts.yts(query, page),
-            scrapPirateBay.pirateBay(query, page),
-            scrapTorLock.torLock(query, page),
-            scrapEzTVio.ezTV(query),
-            scrap1337x.torrent1337x(query, page),
-            rarbg(query, page),
-            zooqle.zooqle(query, page),
-            kickAss(query, page),
-            bitSearch(query, page),
-            glodls(query, page),
-            magnet_dl(query, page),
-            limeTorrent(query, page),
-            torrentFunk(query, page),
-            torrentProject(query, page)
+    const sources = [
+        { fn: torrentGalaxy, key: 'tgx' },
+        { fn: nyaaSI, key: 'nyaasi' },
+        { fn: yts, key: 'yts' },
+        { fn: pirateBay, key: 'piratebay' },
+        { fn: torLock, key: 'torlock' },
+        { fn: ezTV, key: 'eztv' },
+        { fn: torrent1337x, key: '1337x' },
+        { fn: rarbg, key: 'rarbg' },
+        { fn: zooqle, key: 'zql' },
+        { fn: kickAss, key: 'kick' },
+        { fn: bitSearch, key: 'bts' },
+        { fn: glodls, key: 'glo' },
+        { fn: magnet_dl, key: 'mg_dl' },
+        { fn: limeTorrent, key: 'lmt' },
+        { fn: torrentFunk, key: 'tfk' },
+        { fn: torrentProject, key: 'tpj' }
+    ];
 
-        ])
-        .then(([tgx, nyaasi, yts, piratebay, torlock, eztv, x1337, rarbg, zql, kick, bts, glo, mg_dl, lmt, tfk, tpj]) => {
+    const results = await Promise.all(
+        sources.map(({ fn }) => fn(query, page))
+    );
 
-            if (tgx !== null && tgx.length > 0) {
-                comboTorrent.push(tgx);
-            }
-            if (nyaasi !== null && nyaasi.length > 0) {
-                comboTorrent.push(nyaasi);
-            }
-            if (yts !== null && yts.length > 0) {
-                comboTorrent.push(yts);
-            }
-            if (piratebay !== null && piratebay.length > 0) {
-                comboTorrent.push(piratebay);
-            }
-            if (torlock !== null && torlock.length > 0) {
-                comboTorrent.push(torlock);
-            }
-            if (eztv !== null && eztv.length > 0) {
-                comboTorrent.push(eztv);
-            }
-            if (x1337 !== null && x1337.length > 0) {
-                comboTorrent.push(x1337);
-            }
-            if (rarbg !== null && rarbg.length > 0) {
-                comboTorrent.push(rarbg);
-            }
-            if (zql !== null && zql.length > 0) {
-                comboTorrent.push(zql);
-            }
-            if (kick !== null && kick.length > 0) {
-                comboTorrent.push(kick);
-            }
-            if (bts !== null && bts.length > 0) {
-                comboTorrent.push(bts);
-            }
-            if (glo !== null && glo.length > 0) {
-                comboTorrent.push(glo);
-            }
-            if (mg_dl !== null && mg_dl.length > 0) {
-                comboTorrent.push(mg_dl);
-            }
-            if (lmt !== null && lmt.length > 0) {
-                comboTorrent.push(lmt);
-            }
-            if (tfk !== null && tfk.length > 0) {
-                comboTorrent.push(tfk);
-            }
-            if (tpj !== null && tpj.length > 0) {
-                comboTorrent.push(tpj);
-            }
-        })
-    return comboTorrent;
+    return results.filter(result => result !== null && result.length > 0);
 }
-module.exports = combo;
+
+export default combo;
