@@ -1,76 +1,58 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Input } from "@/components/ui/input"
+import { useState } from "react"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { SearchFiltersDialog } from "./search-filters-dialog"
 import { Search, SlidersHorizontal, Loader2, Download } from "lucide-react"
 import { SearchResultsTable } from "./search-results-table"
-import { useToast } from "@/hooks/use-toast"
-import type { TorrentResult } from "@/types/torrent"
-
-interface SearchFilters {
-  category: string
-  limit: number
-}
+import { TorrentResult } from "@/types/torrent"
+import { TorrentCategory } from "@/types/torrent"
+import { 
+  SearchFilters, 
+  DEFAULT_SEARCH_FILTERS,
+  DEFAULT_MIN_SEEDERS,
+  DEFAULT_MIN_SIZE,
+  DEFAULT_LIMIT,
+  DEPTH_SLIDER_CONFIG
+} from '@/lib/constants'
 
 export function SearchInterface() {
+  const [filters, setFilters] = useState<SearchFilters>(DEFAULT_SEARCH_FILTERS)
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState<TorrentResult[]>([])
-  const [categories, setCategories] = useState<string[]>(['All'])
   const [selectedResults, setSelectedResults] = useState<Set<string>>(new Set())
-  const [filters, setFilters] = useState<SearchFilters>({
-    category: 'All',
-    limit: 20
-  })
   const [isDownloading, setIsDownloading] = useState(false)
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch('/api/categories')
-        if (!response.ok) throw new Error('Failed to fetch categories')
-        const data = await response.json()
-        setCategories(Array.isArray(data) ? data : ['All'])
-      } catch (error) {
-        console.error('Failed to fetch categories:', error)
-        setCategories(['All'])
-      }
-    }
-
-    fetchCategories()
-  }, [])
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return
     
     setIsLoading(true)
     try {
-      const response = await fetch('/api/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: searchQuery,
-          ...filters
-        }),
-      })
-      
+      const searchParams = {
+        query: searchQuery,
+        minSeeders: filters.minSeeders.toString(),
+        minSize: filters.minSize.toString(),
+        limit: filters.limit.toString(),
+        searchDepth: filters.searchDepth.toString()
+      }
+
+      const params = new URLSearchParams(searchParams)
+      const response = await fetch(`/api/search?${params}`)
       if (!response.ok) throw new Error('Search failed')
       
-      const data = await response.json()
-      if (data.error) {
-        throw new Error(data.error)
-      }
-      
-      setResults(data)
+      const results = await response.json()
+      const filteredResults = results.filter((result: TorrentResult) => 
+        filters.category === TorrentCategory.ALL || 
+        result.category === filters.category
+      )
+      setResults(filteredResults)
     } catch (error) {
-      console.error('Search failed:', error)
       toast({
-        title: "Search Failed",
+        title: "Error",
         description: error instanceof Error ? error.message : "Failed to perform search",
         variant: "destructive",
       })
@@ -155,8 +137,7 @@ export function SearchInterface() {
         </div>
         <SearchFiltersDialog
           filters={filters}
-          onFiltersChange={setFilters}
-          categories={categories}
+          onFiltersChange={(newFilters) => setFilters(newFilters)}
           trigger={
             <Button variant="outline" size="icon">
               <SlidersHorizontal className="h-4 w-4" />

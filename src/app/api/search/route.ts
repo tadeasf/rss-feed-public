@@ -1,33 +1,53 @@
+// src/app/api/search/route.ts
 import { NextResponse } from 'next/server'
-import { searchTorrents } from '@/lib/search-service'
+import { z } from 'zod'
+import { searchAllProviders } from '@/lib/search-service'
+import { filterAndSortResults } from '@/lib/results-processor'
+import { 
+  DEFAULT_MIN_SEEDERS, 
+  DEFAULT_MIN_SIZE, 
+  DEFAULT_LIMIT,
+  SearchApiFilters,
+  BaseFilters
+} from '@/lib/constants'
 
-export async function POST(request: Request) {
+const searchParamsSchema = z.object({
+  query: z.string().min(1),
+  minSeeders: z.coerce.number().min(0).default(DEFAULT_MIN_SEEDERS),
+  minSize: z.coerce.number().min(0).default(DEFAULT_MIN_SIZE),
+  limit: z.coerce.number().min(1).default(DEFAULT_LIMIT),
+  searchDepth: z.coerce.number().min(1).max(10).default(1)
+})
+
+export async function GET(request: Request) {
   try {
-    const { query, category, limit } = await request.json()
-    console.log('Search request received:', { query, category, limit })
-    
-    const results = await searchTorrents(query, category, limit)
-    
-    // Filter out results without magnet links
-    const validResults = results.filter(result => result.magnet)
-    
-    console.log(`Found ${results.length} results, ${validResults.length} with valid magnets`)
-    console.log('First two valid results:', validResults.slice(0, 2))
-    
-    return NextResponse.json(validResults)
-  } catch (error) {
-    console.error('Detailed API error:', {
-      error,
-      stack: error instanceof Error ? error.stack : undefined,
-      message: error instanceof Error ? error.message : String(error)
+    const { searchParams } = new URL(request.url)
+    const parsedParams = searchParamsSchema.parse({
+      query: searchParams.get('query'),
+      minSeeders: searchParams.get('minSeeders'),
+      minSize: searchParams.get('minSize'),
+      limit: searchParams.get('limit'),
+      searchDepth: searchParams.get('searchDepth')
     })
-    
+
+    const results = await searchAllProviders(parsedParams.query, parsedParams.searchDepth)
+    const baseFilters: BaseFilters = {
+      minSeeders: parsedParams.minSeeders,
+      minSize: parsedParams.minSize,
+      limit: parsedParams.limit,
+      searchDepth: parsedParams.searchDepth
+    }
+    const filteredResults = filterAndSortResults(results, baseFilters)
+
+    return NextResponse.json(filteredResults)
+  } catch (error) {
+    console.error('Search error:', error)
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.errors }, { status: 400 })
+    }
     return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Failed to perform search',
-        details: error instanceof Error ? error.stack : String(error)
-      },
+      { error: error instanceof Error ? error.message : 'Failed to search torrents' },
       { status: 500 }
     )
   }
-} 
+}

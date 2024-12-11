@@ -1,12 +1,20 @@
 import { NextResponse } from 'next/server'
-import { getActiveProviders } from '@/lib/search-service'
+import { torrentProviders } from '@/lib/constants'
 
 export async function GET() {
   try {
-    const providers = await getActiveProviders()
+    // Convert providers to a simpler format for the frontend
+    const providers = torrentProviders.map(provider => ({
+      id: provider.id,
+      name: provider.name
+    }))
+    
     return NextResponse.json(providers)
   } catch (error) {
     console.error('Failed to get providers:', error)
-    return NextResponse.json({ error: 'Failed to get providers' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to get providers' }, 
+      { status: 500 }
+    )
   }
 } 

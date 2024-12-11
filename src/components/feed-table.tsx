@@ -20,7 +20,10 @@ export function FeedTable({ items }: FeedTableProps) {
       <TableHeader>
         <TableRow>
           <TableHead>Title</TableHead>
-          <TableHead>Link</TableHead>
+          <TableHead>Magnet</TableHead>
+          <TableHead>Size</TableHead>
+          <TableHead>Seeders</TableHead>
+          <TableHead>Category</TableHead>
           <TableHead>Date</TableHead>
         </TableRow>
       </TableHeader>
@@ -30,16 +33,19 @@ export function FeedTable({ items }: FeedTableProps) {
             <TableCell>{item.title}</TableCell>
             <TableCell>
               <a 
-                href={item.link}
+                href={item.magnet}
                 className="text-blue-500 hover:underline"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {item.link}
+                Magnet Link
               </a>
             </TableCell>
+            <TableCell>{item.size}</TableCell>
+            <TableCell>{item.seeders}</TableCell>
+            <TableCell>{item.category}</TableCell>
             <TableCell>
-              {new Date(item.date).toLocaleDateString()}
+              {new Date(item.uploadDate).toLocaleDateString()}
             </TableCell>
           </TableRow>
         ))}

@@ -1,36 +1,24 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RSS Feed Application
 
-## Getting Started
+A Next.js application for managing torrent RSS feeds, built with Bun and Docker. This application is designed to work together with [transmission-pia-compose](https://github.com/tadeasf/transmission-pia-compose) and [plex-compose](https://github.com/tadeasf/plex-compose) to create a complete self-hosted streaming platform.
 
-First, run the development server:
+## System Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+This application is part of a larger ecosystem:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. RSS Feed App (this repo) - Manages and monitors torrent RSS feeds
+2. [transmission-pia-compose](https://github.com/tadeasf/transmission-pia-compose) - Handles torrent downloading with VPN protection
+3. [plex-compose](https://github.com/tadeasf/plex-compose) - Provides media streaming capabilities
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Together, these components create an independent, self-hosted streaming platform.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Prerequisites
 
-## Learn More
+- Docker and Docker Compose
+- Bun (for local development)
+- Node.js (for torrent-service)
+- Recommended: Set up transmission-pia-compose and plex-compose first
 
-To learn more about Next.js, take a look at the following resources:
+## Quick Start
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The application can be run in either development or production mode using our initialization script:

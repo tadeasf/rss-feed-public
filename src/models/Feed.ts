@@ -1,10 +1,8 @@
 import mongoose from 'mongoose'
+import { TorrentCategory, BaseTorrent } from '@/types/torrent'
 
-export interface FeedItem {
+export interface FeedItem extends BaseTorrent {
   _id: string
-  title: string
-  link: string
-  date: Date
 }
 
 const feedSchema = new mongoose.Schema({
@@ -12,14 +10,36 @@ const feedSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  link: {
+  magnet: {
     type: String,
     required: true,
   },
-  date: {
-    type: Date,
-    default: Date.now,
+  size: {
+    type: String,
+    required: true,
   },
+  seeders: {
+    type: Number,
+    required: true,
+  },
+  leechers: {
+    type: Number,
+    required: true,
+  },
+  category: {
+    type: String,
+    enum: Object.values(TorrentCategory),
+    required: true,
+  },
+  uploadDate: {
+    type: Date,
+    required: true,
+    default: Date.now
+  },
+  provider: {
+    type: String,
+    required: true,
+  }
 })
 
 export const Feed = mongoose.models.Feed || mongoose.model('Feed', feedSchema) 

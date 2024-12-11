@@ -1,0 +1,24 @@
+FROM oven/bun:1.1.38-debian
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json bun.lockb ./
+
+# Install dependencies including dev dependencies
+RUN bun install
+
+# Environment variables for development
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=development
+ENV NODE_OPTIONS="--no-warnings"
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+ENV TORRENT_SERVICE_URL=http://torrent-service:3001
+ENV WATCHPACK_POLLING=true
+ENV CHOKIDAR_USEPOLLING=true
+
+EXPOSE 3000
+
+# Use development command with the --watch flag
+CMD ["bun", "run", "dev", "--watch"]

@@ -32,17 +32,38 @@ export function SearchResultsTable({
     onSelectionChange(newSelected)
   }
 
+  function formatSize(result: TorrentResult): string {
+    return `${result.originalSize}`
+  }
+
+  function formatDate(date: Date | string | null): string {
+    if (!date) return 'Unknown'
+    
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date
+      return dateObj.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+    } catch {
+      console.warn('Failed to format date:', date)
+      return 'Invalid Date'
+    }
+  }
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-[50px]">Select</TableHead>
-          <TableHead>Title</TableHead>
-          <TableHead>Size</TableHead>
-          <TableHead>Seeds</TableHead>
-          <TableHead>Peers</TableHead>
-          <TableHead>Provider</TableHead>
-          <TableHead>Time</TableHead>
+            <TableHead className="w-[50px]">Select</TableHead>
+            <TableHead>Title</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>Size</TableHead>
+            <TableHead>Seeders</TableHead>
+            <TableHead>Leechers</TableHead>
+            <TableHead>Provider</TableHead>
+            <TableHead>Date</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -55,24 +76,25 @@ export function SearchResultsTable({
               />
             </TableCell>
             <TableCell className="font-medium">
-              {(result.desc || result.magnet) ? (
+                {result.url ? (
                 <a 
-                  href={result.desc || result.magnet}
+                  href={result.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:underline text-blue-500"
                 >
                   {result.title}
                 </a>
-              ) : (
+                ) : (
                 result.title
-              )}
-            </TableCell>
-            <TableCell>{result.size}</TableCell>
-            <TableCell>{result.seeds}</TableCell>
-            <TableCell>{result.peers}</TableCell>
+                )}
+              </TableCell>
+              <TableCell>{result.category}</TableCell>
+              <TableCell>{formatSize(result)}</TableCell>
+            <TableCell>{result.seeders}</TableCell>
+            <TableCell>{result.leechers}</TableCell>
             <TableCell>{result.provider}</TableCell>
-            <TableCell>{result.time}</TableCell>
+            <TableCell>{formatDate(result.uploadDate)}</TableCell>
           </TableRow>
         ))}
       </TableBody>

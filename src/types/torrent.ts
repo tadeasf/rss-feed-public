@@ -1,39 +1,51 @@
-// Base type from torrent-search-api
-export interface Torrent {
+export enum TorrentCategory {
+  ALL = 'ALL',
+  MOVIES = 'MOVIES',
+  TV = 'TV',
+  ADULT = 'ADULT'
+}
+
+// Base torrent interface
+export interface BaseTorrent {
   title: string
-  time: string
+  magnet?: string
   size: string
-  magnet: string
-  desc: string
+  seeders: number
+  leechers: number
+  category: TorrentCategory
+  uploadDate: string
   provider: string
 }
 
-// Extended type with additional fields we get from the API
-export interface TorrentApiResult extends Torrent {
-  seeds?: number
-  peers?: number
-  link?: string
-  id?: string
-  numFiles?: number
-  status?: string
-  category?: string
-  imdb?: string
+// Response from external API
+export interface TorrentApiResponse {
+  title: string
+  magnet: string
+  size: string
+  seeders: number
+  leechers: number
+  category: string
+  uploadDate: string
+  provider: string
+  desc?: string
+  url?: string
+  downloads?: number
 }
 
-// Our application's normalized type
+// Our normalized torrent result
 export interface TorrentResult {
   title: string
-  time: string
-  size: string
+  magnet: string
+  size: number // Normalized to GB
+  seeders: number
+  leechers: number
+  category: string
+  uploadDate: string | Date
   provider: string
-  seeds: number
-  peers: number
-  magnet?: string
   desc?: string
-  link?: string
-  id?: string
-  numFiles?: number
-  status?: string
-  category?: string
-  imdb?: string
+  url?: string
+  downloads?: number
+  sizeUnit: 'MB' | 'GB' | 'TB'
+  originalSize: string
+  
 } 

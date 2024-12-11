@@ -1,14 +1,23 @@
-FROM oven/bun:1
+# services/torrent-service/Dockerfile
+FROM node:20-alpine
 
 WORKDIR /app
 
-COPY services/torrent-service/package.json .
-COPY services/torrent-service/bun.lockb .
+# Install wget for healthcheck
+RUN apk add --no-cache wget
 
-COPY src/types ./src/types
+COPY package*.json ./
 
-RUN bun install
+RUN npm install --production
 
-COPY services/torrent-service .
+COPY . .
 
-CMD ["bun", "run", "index.ts"] 
+EXPOSE 3001
+
+# Update healthcheck to use the actual endpoint that works
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/1337x/test || exit 1
+
+USER node
+
+CMD ["npm", "run", "start"]
